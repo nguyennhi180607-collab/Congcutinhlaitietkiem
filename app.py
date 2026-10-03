@@ -1,74 +1,82 @@
 import streamlit as st
 import pandas as pd
 
-# 1. Cấu hình trang
+# ==========================================
+# 1. CẤU HÌNH TRANG (BẮT BUỘC ĐẶT Ở ĐẦU)
+# ==========================================
 st.set_page_config(
     page_title="Tính Lãi Gửi Tiết Kiệm",
     page_icon="🏦",
     layout="centered"
 )
 
-# Hiển thị Logo
+# Hiển thị Logo (tự động bỏ qua nếu chưa có file logo.jpg)
 try:
     st.image("logo.jpg", width=150)
 except Exception:
     pass
 
-st.title("🏦 Công Cụ Tính Lãi Gửi Tiết Kiệm - Nguyễn Thị Yến Nhi❤️")
+st.title("🏦 Công Cụ Tính Lãi Gửi Tiết Kiệm - Nguyễn Thị Yến Nhi❤️️")
 st.write("Nhập các thông tin dưới đây để tính toán tiền lãi ngân hàng thu được.")
 
-# 2. Bảng quy đổi Lãi suất chuẩn theo kỳ hạn
+# ==========================================
+# 2. BẢNG LÃI SUẤT THEO KỲ HẠN
+# ==========================================
 RATE_DICT = {
-    1: 3.00,
-    2: 3.10,
-    3: 3.40,
-    6: 4.50,
-    9: 4.70,
-    12: 5.30,
-    18: 5.60,
-    24: 5.80,
-    36: 6.00
+    1: 3.80,
+    3: 4.50,
+    6: 6.20,
+    9: 6.60,
+    12: 7.50,
+    18: 7.90,
+    24: 8.20,
+    36: 8.80
 }
 
 def get_suggested_rate(months):
-    """Hàm tự động tra cứu lãi suất tương ứng với số tháng"""
+    """Tự động khớp mức lãi suất dựa trên số tháng gửi"""
     if months in RATE_DICT:
         return RATE_DICT[months]
     elif months < 3:
-        return 3.00
+        return 3.80
     elif months < 6:
-        return 3.40
-    elif months < 9:
         return 4.50
+    elif months < 9:
+        return 6.20
     elif months < 12:
-        return 4.70
+        return 6.60
     elif months < 18:
-        return 5.30
+        return 7.50
     elif months < 24:
-        return 5.60
+        return 7.90
+    elif months < 36:
+        return 8.20
     else:
-        return 6.00
+        return 8.80
 
-# Hàm callback tự động cập nhật Lãi suất khi đổi Kỳ hạn
+# Hàm callback tự động cập nhật lãi suất khi thay đổi kỳ hạn
 def update_rate_by_term():
     st.session_state.annual_rate = get_suggested_rate(st.session_state.term_months)
 
-# Khởi tạo giá trị ban đầu trong session_state nếu chưa có
+# Khởi tạo giá trị ban đầu cho session_state
 if "term_months" not in st.session_state:
     st.session_state.term_months = 12
 if "annual_rate" not in st.session_state:
     st.session_state.annual_rate = get_suggested_rate(st.session_state.term_months)
 
-# 3. Thanh bên (Sidebar): Bảng lãi suất tham khảo
-st.sidebar.header("📌 Bảng Lãi Suất Tham Khảo")
-data_rates = {
+# ==========================================
+# 3. HIỂN THỊ BẢNG LÃI SUẤT Ở SIDEBAR
+# ==========================================
+st.sidebar.header("📌 Bảng Lãi Suất Ưu Đãi")
+df_rates = pd.DataFrame({
     "Kỳ hạn": [f"{m} tháng" for m in RATE_DICT.keys()],
-    "Lãi suất (%/năm)": list(RATE_DICT.values())
-}
-df_rates = pd.DataFrame(data_rates)
+    "Lãi suất (%/năm)": [f"{r:.2f}%" for r in RATE_DICT.values()]
+})
 st.sidebar.dataframe(df_rates, use_container_width=True, hide_index=True)
 
-# 4. Form / Khu vực nhập liệu (Đặt ngoài st.form để tương tác tức thì)
+# ==========================================
+# 4. KHU VỰC NHẬP LIỆU
+# ==========================================
 col1, col2 = st.columns(2)
 
 with col1:
@@ -76,11 +84,10 @@ with col1:
         "1. Số tiền gửi (VNĐ):",
         min_value=1_000_000,
         value=100_000_000,
-        step=1_000_000,
+        step=5_000_000,
         format="%d"
     )
     
-    # Khi thay đổi kỳ hạn, tự động gọi callback để cập nhật lãi suất
     term_months = st.number_input(
         "2. Kỳ hạn gửi (tháng):",
         min_value=1,
@@ -93,13 +100,12 @@ with col1:
     interest_type = st.radio(
         "3. Loại hình tính lãi:",
         options=["Lãi đơn", "Lãi kép (Lãi nhập gốc)"],
-        help="Lãi đơn: Lãi không cộng dồn. Lãi kép: Lãi mỗi kỳ cộng vào gốc để tính lãi kỳ sau."
+        help="Lãi đơn: Lãi cố định trên gốc ban đầu. Lãi kép: Lãi mỗi kỳ cộng vào gốc để tính lãi kỳ sau."
     )
 
 with col2:
-    # Lãi suất được điền tự động nhưng người dùng vẫn có thể chỉnh sửa thủ công
     annual_rate = st.number_input(
-        "4. Lãi suất (%/năm) - *Tự động cập nhật*:",
+        "4. Lãi suất (%/năm) - *Tự động chọn*:",
         min_value=0.1,
         max_value=20.0,
         key="annual_rate",
@@ -112,16 +118,18 @@ with col2:
         options=["Cuối kỳ", "Hàng tháng", "Hàng quý"]
     )
 
-st.caption(f"💡 *Lãi suất đang được gợi ý tự động là **{annual_rate:.2f}%/năm** cho kỳ hạn **{term_months} tháng**. Bạn vẫn có thể tùy chỉnh lại nếu cần.*")
+st.caption(f"💡 *Lãi suất áp dụng tự động cho kỳ hạn **{term_months} tháng** là **{annual_rate:.2f}%/năm**. Bạn vẫn có thể tùy chỉnh lại con số này.*")
 
-# 5. Tính toán kết quả
+# ==========================================
+# 5. TÍNH TOÁN KẾT QUẢ
+# ==========================================
 r_monthly = (annual_rate / 100) / 12
 r_quarterly = (annual_rate / 100) / 4
 
 schedule = []
 
 if interest_type == "Lãi đơn":
-    # ----- LÃI ĐƠN -----
+    # ----- TÍNH LÃI ĐƠN -----
     total_interest = principal * (annual_rate / 100) * (term_months / 12)
     total_payout = principal + total_interest
 
@@ -151,7 +159,7 @@ if interest_type == "Lãi đơn":
             })
 
 else:
-    # ----- LÃI KÉP (LÃI NHẬP GỐC) -----
+    # ----- TÍNH LÃI KÉP (LÃI NHẬP GỐC) -----
     current_principal = float(principal)
     
     if payout_option == "Hàng tháng":
@@ -198,14 +206,16 @@ else:
         periodic_interest = principal * r_quarterly
         payout_label = "Lãi quý đầu tiên"
 
-    else:  # Cuối kỳ (nhập gốc hàng năm)
+    else:  # Cuối kỳ (Ghép lãi hàng năm)
         years = term_months / 12
         total_payout = principal * ((1 + (annual_rate / 100)) ** years)
         total_interest = total_payout - principal
         periodic_interest = total_interest
         payout_label = "Tổng lãi nhận khi đáo hạn"
 
-# 6. Hiển thị kết quả
+# ==========================================
+# 6. HIỂN THỊ KẾT QUẢ TÍNH TOÁN
+# ==========================================
 st.markdown("---")
 st.subheader(f"📊 Kết Quả Tính Toán ({interest_type})")
 
@@ -217,7 +227,7 @@ with m2:
 with m3:
     st.metric(label="Tổng gốc + lãi thu về", value=f"{total_payout:,.0f} VNĐ")
 
-# Bảng tóm tắt
+# Bảng tóm tắt giao dịch
 st.markdown("### 📋 Tóm tắt giao dịch")
 st.table({
     "Thông tin": [
@@ -238,6 +248,7 @@ st.table({
     ]
 })
 
+# Bảng lịch trình chi tiết nếu có
 if schedule:
-    st.markdown("### 📈 Lịch trình chi tiết theo từng kỳ")
+    st.markdown("### 📈 Lịch trình chi tiết từng kỳ")
     st.dataframe(pd.DataFrame(schedule), use_container_width=True, hide_index=True)
