@@ -7,7 +7,7 @@ st.set_page_config(
     layout="centered"
 )
 
-st.title("🏦 Công Cụ Tính Lãi Gửi Tiết Kiệm")
+st.title("🏦 Công Cụ Tính Lãi Gửi Tiết Kiệm - Nguyễn Nhi")
 st.write("Nhập các thông tin dưới đây để tính toán tiền lãi ngân hàng thu được.")
 
 # Form nhập liệu từ người dùng
